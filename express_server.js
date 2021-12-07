@@ -27,6 +27,22 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars);
   });
 
+  app.get("/urls/:shortURL", (req, res) => {
+    let parameterValue = req.params.shortURL
+    let longURL;
+    for(let url in urlDatabase){
+        if(parameterValue) {
+            console.log(urlDatabase[parameterValue])
+            longURL = urlDatabase[parameterValue]
+        } else {
+            longURL = "doesn't exist"
+        }
+    }
+    const templateVars = { shortURL: req.params.shortURL, longURL: longURL};
+    res.render("urls_show", templateVars);
+  });
+  
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
