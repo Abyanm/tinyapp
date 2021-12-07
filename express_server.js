@@ -33,6 +33,9 @@ app.post("/urls", (req, res) => {
 
     res.redirect("/urls")
   })
+  app.post("/urls/:id", (req, res) => {
+    
+  })
 
 app.get("/", (req, res) => {
   res.send("Hello!");
