@@ -25,6 +25,14 @@ app.post("/urls", (req, res) => {
     console.log(urlDatabase);
     res.redirect(`/u/${shortURL}`)         // Respond with 'Ok' (we will replace this)
   });
+  app.post("/urls/:shortURL/delete", (req, res) => {
+    let shortURL = req.params.shortURL;
+    console.log(urlDatabase)
+    delete urlDatabase[shortURL]
+    console.log(urlDatabase)
+
+    res.redirect("/urls")
+  })
 
 app.get("/", (req, res) => {
   res.send("Hello!");
