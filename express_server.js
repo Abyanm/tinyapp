@@ -11,6 +11,9 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+function generateRandomString() {
+
+}
 
 
 app.post("/urls", (req, res) => {
@@ -63,3 +66,4 @@ app.post("/urls", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
