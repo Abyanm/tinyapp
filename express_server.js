@@ -34,7 +34,7 @@ app.post("/urls", (req, res) => {
     res.redirect("/urls")
   })
   app.post("/urls/:id", (req, res) => {
-    
+
   })
 
 app.get("/", (req, res) => {
@@ -61,6 +61,12 @@ app.get("/urls/new", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
    res.send("ok")
   });
+
+app.post("/login", (req, res) => {
+  let username = req.body.username
+  res.cookie('name',username)
+      res.send("ok")
+   });  
   
   app.get("/urls/:shortURL", (req, res) => {
     let parameterValue = req.params.shortURL
