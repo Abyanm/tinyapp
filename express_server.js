@@ -66,15 +66,20 @@ app.get("/hello", (req, res) => {
   });
 
 app.get("/urls", (req, res) => {
-    const templateVars = { urls: urlDatabase ,
-      username: req.cookies['username'] };
+  let id = req.cookies.user_id
+    const templateVars = { 
+      urls: urlDatabase ,
+      username: req.cookies.username,
+      user: users[id]
+    };
     res.render("urls_index", templateVars);
   });
 
 app.get("/urls/new", (req, res) => {
-
+  let id = req.cookies.user_id
   const templateVars = {
-    username: req.cookies['username']
+    username: req.cookies.username,
+    user: users[id]
   };
     res.render("urls_new",templateVars);
   });
@@ -108,7 +113,6 @@ app.post("/register", (req, res) => {
         id:id
       }
       users[id]= userinfo
-      console.log(users)
       res.cookie('user_id', id)
       res.redirect("/urls")
 });  

@@ -7,8 +7,8 @@
     <title>Document</title>
 </head>
 <body>
-    <% if (username) { %>
-        <h2><%= username %></h2>
+    <% if(user) { %>
+        <h2><%= user.email %></h2>
         <form method="POST" action ="/logout">
             <input type="submit" value="Logout">
         </form>
