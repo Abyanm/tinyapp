@@ -70,6 +70,10 @@ app.get("/u/:shortURL", (req, res) => {
    res.send("ok")
   });
 
+  app.get("/register", (req, res) => {
+    res.render("urls_registration")
+   });
+
 app.post("/login", (req, res) => {
   let username = req.body.username
   res.cookie('username',username)
@@ -81,7 +85,12 @@ app.post("/login", (req, res) => {
     //   res.send("ok")
     res.redirect("/urls")
      });  
-  
+// app.post("/register", (req, res) => {
+//       let register = req.body.register
+//       //res.cookie('register', register)
+//         res.redirect("/urls")
+//        });  
+
   app.get("/urls/:shortURL", (req, res) => {
     let parameterValue = req.params.shortURL
     let longURL;
