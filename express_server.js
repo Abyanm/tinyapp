@@ -14,6 +14,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "pink-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-greg"
+  }
+}
+
 function generateRandomString() {
     const rand = Math.random().toString(16).substr(2, 8);
     return rand;
@@ -44,6 +57,17 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+app.get("/login", (req, res) => {
+    let id = req.cookies.user_id
+    const templateVars = { 
+      urls: urlDatabase ,
+      user: users[id]
+    };
+
+res.render("urls_login", templateVars)
+
+});
+
 app.get("/urls.json", (req, res) => {
     res.json(urlDatabase);
 }); 
@@ -53,15 +77,18 @@ app.get("/hello", (req, res) => {
   });
 
 app.get("/urls", (req, res) => {
-    const templateVars = { urls: urlDatabase ,
-      username: req.cookies['username'] };
+  let id = req.cookies.user_id
+    const templateVars = { 
+      urls: urlDatabase ,
+      user: users[id]
+    };
     res.render("urls_index", templateVars);
   });
 
 app.get("/urls/new", (req, res) => {
-
+  let id = req.cookies.user_id
   const templateVars = {
-    username: req.cookies['username']
+    user: users[id]
   };
     res.render("urls_new",templateVars);
   });
@@ -70,18 +97,64 @@ app.get("/u/:shortURL", (req, res) => {
    res.send("ok")
   });
 
+  app.get("/register", (req, res) => {
+    let id = req.cookies.user_id
+  const templateVars = {
+    user: users[id]
+  };
+    res.render("urls_registration",templateVars)
+   });
+
 app.post("/login", (req, res) => {
-  let username = req.body.username
-  res.cookie('username',username)
-    res.redirect("/urls")
+    console.log(req.body)
+    for(let user in users) {
+      let userFound = users[user]
+        console.log("user", userFound.email)
+        if(userFound.email == req.body.email){
+          if(userFound.password !== req.body.password){
+            res.status(403).send("Invalid Password")
+          } 
+          res.cookie("user_id",userFound.id)
+          res.redirect("/urls") 
+          
+        }
+    }
+    res.status(403).send("Invalid Email")
    });  
 
    app.post("/logout", (req, res) => {
-    res.clearCookie('username')
+    res.clearCookie('user_id')
     //   res.send("ok")
     res.redirect("/urls")
      });  
+app.post("/register", (req, res) => {
+  let email= req.body.email
+  let password = req.body.password
+  if(!email ) {
+    res.status(400).send("Invalid Email")
+  }
+  if(!password ) {
+    res.status(400).send("Invalid password")
+  } 
+  for ( user in users) {
+    if(users[user].email == email) {
+      res.status(400).send("Email already registered")
+    }
+  }
   
+  
+  let id = generateRandomString()
+      let userinfo = {
+        "email": email,
+        "password": password,
+        "id":id
+      }
+      users[id]= userinfo
+      console.log(users)
+      res.cookie('user_id', id)
+      res.redirect("/urls")
+});  
+
   app.get("/urls/:shortURL", (req, res) => {
     let parameterValue = req.params.shortURL
     let longURL;

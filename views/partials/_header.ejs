@@ -7,17 +7,16 @@
     <title>Document</title>
 </head>
 <body>
-    <% if (username) { %>
-        <h2><%= username %></h2>
+    <% if(user) { %>
+        <h2><%= user.email %></h2>
         <form method="POST" action ="/logout">
             <input type="submit" value="Logout">
         </form>
         
       <% } else {%>
-        <form method="POST" action="/login">
-            <input name="username" >
-             <input type="submit" value="Submit">
-        </form>
+            
+            <button><a href="/login" > Login </a></button>
+            <button> <a href="/register" > Register </a></button>
         <% } %>
 </body>
 </html>
