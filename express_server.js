@@ -93,6 +93,7 @@ app.get("/u/:shortURL", (req, res) => {
    });
 
 app.post("/login", (req, res) => {
+  //check username and password
   let username = req.body.username
   res.cookie('username',username)
     res.redirect("/urls")
@@ -106,6 +107,19 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
   let email= req.body.email
   let password = req.body.password
+  if(!email ) {
+    res.status(400).send("Invalid Email")
+  }
+  if(!password ) {
+    res.status(400).send("Invalid password")
+  } 
+  for ( user in users) {
+    if(users[user].email == email) {
+      res.status(400).send("Email already registered")
+    }
+  }
+  
+  
   let id = generateRandomString()
       let userinfo = {
         email: email,
