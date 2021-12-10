@@ -58,47 +58,39 @@ function generateRandomString() {
 
 app.post("/urls", (req, res) => {
   
-    console.log(req.body);  // Log the POST request body to the console
     // ADD req.body to the urlDatabase
     let shortURL = generateRandomString()
     urlDatabase[shortURL] = { 
       longURL: req.body.longURL, user_id : req.cookies.user_id
     }
-    console.log(urlDatabase);
     res.redirect(`/urls/${shortURL}`)         // Respond with 'Ok' (we will replace this)
   });
   app.post("/urls/:shortURL/delete", (req, res) => {
     let shortURL = req.params.shortURL;
-    console.log(urlDatabase)
-    console.log(urlDatabase[shortURL])
+    // console.log(urlDatabase)
+    // console.log(urlDatabase[shortURL])
     if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
       delete urlDatabase[shortURL] 
       res.redirect("/urls")
     } else {
       res.status(401).send("Please Login")
-    } 
-    
-    console.log(urlDatabase)
-    
+    }
+  
   })
 
   app.post("/urls/:shortURL", (req, res) => {
     let shortURL = req.params.shortURL;
-    console.log(urlDatabase)
-    console.log(urlDatabase[shortURL])
+  
     if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
       urlDatabase[shortURL].longURL=req.body.newurl  // this is where i will add the edit 
       res.redirect("/urls")
     } else {
       res.status(401).send("Please Login")
-    } 
-    
-    console.log(urlDatabase)
+    }
     
   })
 
 app.get("/", (req, res) => {
-  console.log(urlsForUser("aJ48lW"))
   res.send("Hello!");
 });
 
@@ -160,21 +152,24 @@ app.get("/urls/new", (req, res) => {
    });
 
 app.post("/login", (req, res) => {
-    console.log(req.body)
     for(let user in users) {
       let userFound = users[user]
-        console.log("user", userFound.email)
         if(userFound.email == req.body.email){
-          if(userFound.password !== req.body.password){
+          // make the incoming password compare to the hashed password and come back to the incoming password
+          const passwordFromDatabase = userFound.password // hashed password
+          const passwordFromUser = req.body.password  // regular password
+          const isPasswordsValid = bcrypt.compareSync(passwordFromUser, passwordFromDatabase)
+          if(!isPasswordsValid ) {
             res.status(403).send("Invalid Password")
           } 
           res.cookie("user_id",userFound.id)
           res.redirect("/urls") 
+          return 
           
         }
     }
     res.status(403).send("Invalid Email")
-   });  
+  });  
 
    app.post("/logout", (req, res) => {
     res.clearCookie('user_id')
@@ -201,11 +196,10 @@ app.post("/register", (req, res) => {
   let id = generateRandomString()
       let userinfo = {
         "email": email,
-        "password": password,
+        "password": hashedPassword,
         "id":id
       }
       users[id]= userinfo
-      console.log(users)
       res.cookie('user_id', id)
       res.redirect("/urls")
 });  
@@ -215,7 +209,6 @@ app.post("/register", (req, res) => {
     let longURL;
     for(let url in urlDatabase){
         if(parameterValue) {
-            console.log(urlDatabase[parameterValue])
             longURL = urlDatabase[parameterValue].longURL
         } else {
             longURL = "doesn't exist"
