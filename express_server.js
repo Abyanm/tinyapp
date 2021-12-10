@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookies = require("cookie-parser");
 app.use(cookies());
+const bcrypt = require('bcryptjs');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -183,6 +184,7 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
   let email= req.body.email
   let password = req.body.password
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if(!email ) {
     res.status(400).send("Invalid Email")
   }
