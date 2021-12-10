@@ -9,9 +9,30 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
+function urlsForUser(id) {
+  let urls=[];
+  for(let url in urlDatabase){
+    let userID= urlDatabase[url].userID;
+    let urlFound = urlDatabase[url].longURL
+    if(userID == id){
+      urls.push(urlFound)
+    }
+  }
+  return urls;
+}
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 const users = { 
@@ -27,6 +48,7 @@ const users = {
   }
 }
 
+
 function generateRandomString() {
     const rand = Math.random().toString(16).substr(2, 8);
     return rand;
@@ -34,26 +56,48 @@ function generateRandomString() {
 
 
 app.post("/urls", (req, res) => {
+  
     console.log(req.body);  // Log the POST request body to the console
     // ADD req.body to the urlDatabase
     let shortURL = generateRandomString()
-    urlDatabase[shortURL] = req.body.longURL
+    urlDatabase[shortURL] = { 
+      longURL: req.body.longURL, user_id : req.cookies.user_id
+    }
     console.log(urlDatabase);
-    res.redirect(`/u/${shortURL}`)         // Respond with 'Ok' (we will replace this)
+    res.redirect(`/urls/${shortURL}`)         // Respond with 'Ok' (we will replace this)
   });
   app.post("/urls/:shortURL/delete", (req, res) => {
     let shortURL = req.params.shortURL;
     console.log(urlDatabase)
-    delete urlDatabase[shortURL]
+    console.log(urlDatabase[shortURL])
+    if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
+      delete urlDatabase[shortURL] 
+      res.redirect("/urls")
+    } else {
+      res.status(401).send("Please Login")
+    } 
+    
     console.log(urlDatabase)
-
-    res.redirect("/urls")
+    
   })
-  app.post("/urls/:id", (req, res) => {
 
+  app.post("/urls/:shortURL", (req, res) => {
+    let shortURL = req.params.shortURL;
+    console.log(urlDatabase)
+    console.log(urlDatabase[shortURL])
+    if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
+      urlDatabase[shortURL].longURL=req.body.newurl  // this is where i will add the edit 
+      res.redirect("/urls")
+    } else {
+      res.status(401).send("Please Login")
+    } 
+    
+    console.log(urlDatabase)
+    
   })
 
 app.get("/", (req, res) => {
+  console.log(urlsForUser("aJ48lW"))
   res.send("Hello!");
 });
 
@@ -90,12 +134,21 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user: users[id]
   };
+
+  if(users[id]){
     res.render("urls_new",templateVars);
+  } else {
+    console.log("Account must be logged in, Please log in first.")
+    // res.status(403).send("User not logged in")
+    res.redirect("/login")
+    
+  }
+   
   });
 
-app.get("/u/:shortURL", (req, res) => {
-   res.send("ok")
-  });
+// app.get("/u/:shortURL", (req, res) => {
+//    res.redirect(urlDatabase[req.params.shortURL].longURL)
+//   });
 
   app.get("/register", (req, res) => {
     let id = req.cookies.user_id
@@ -161,7 +214,7 @@ app.post("/register", (req, res) => {
     for(let url in urlDatabase){
         if(parameterValue) {
             console.log(urlDatabase[parameterValue])
-            longURL = urlDatabase[parameterValue]
+            longURL = urlDatabase[parameterValue].longURL
         } else {
             longURL = "doesn't exist"
         }
@@ -169,7 +222,6 @@ app.post("/register", (req, res) => {
     const templateVars = { shortURL: req.params.shortURL, longURL: longURL};
     res.render("urls_show", templateVars);
   });
-  
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
