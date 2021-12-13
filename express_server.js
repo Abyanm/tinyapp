@@ -3,6 +3,12 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookies = require("cookie-parser");
+const cookieSession = require("cookie-session")
+const {getUserByEmail }= require('./helpers')
+app.use(cookieSession({
+  name: 'session',
+  keys: ["user_id"],
+}))
 app.use(cookies());
 const bcrypt = require('bcryptjs');
 
@@ -21,19 +27,12 @@ function urlsForUser(id) {
   }
   return urls;
 }
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
+
 const urlDatabase = {
-  b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
-  },
-  i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
-  }
+ b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "userRandomID"
+ }
 };
 
 const users = { 
@@ -61,7 +60,7 @@ app.post("/urls", (req, res) => {
     // ADD req.body to the urlDatabase
     let shortURL = generateRandomString()
     urlDatabase[shortURL] = { 
-      longURL: req.body.longURL, user_id : req.cookies.user_id
+      longURL: req.body.longURL, user_id : req.session.user_id
     }
     res.redirect(`/urls/${shortURL}`)         // Respond with 'Ok' (we will replace this)
   });
@@ -69,9 +68,15 @@ app.post("/urls", (req, res) => {
     let shortURL = req.params.shortURL;
     // console.log(urlDatabase)
     // console.log(urlDatabase[shortURL])
-    if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
-      delete urlDatabase[shortURL] 
-      res.redirect("/urls")
+    if(req.session.user_id){
+      console.log(req.session.user_id)
+      console.log(urlDatabase[shortURL])
+      if(urlDatabase[shortURL].user_id === req.session.user_id){ 
+         // use user_is to refrence user id
+         console.log(urlDatabase[shortURL] )
+        delete urlDatabase[shortURL] 
+        res.redirect("/urls")
+      } 
     } else {
       res.status(401).send("Please Login")
     }
@@ -81,7 +86,7 @@ app.post("/urls", (req, res) => {
   app.post("/urls/:shortURL", (req, res) => {
     let shortURL = req.params.shortURL;
   
-    if(urlDatabase[shortURL].user_id === req.cookies.user_id){  // use user_is to refrence user id
+    if(urlDatabase[shortURL].user_id === req.session.user_id){  // use user_is to refrence user id
       urlDatabase[shortURL].longURL=req.body.newurl  // this is where i will add the edit 
       res.redirect("/urls")
     } else {
@@ -91,11 +96,17 @@ app.post("/urls", (req, res) => {
   })
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  // res.send("Hello!");
+  if(req.session.user_id){
+    res.redirect("/urls")
+  } else {
+    res.redirect("/login")
+  }
+ 
 });
 
 app.get("/login", (req, res) => {
-    let id = req.cookies.user_id
+    let id = req.session.user_id
     const templateVars = { 
       urls: urlDatabase ,
       user: users[id]
@@ -114,16 +125,19 @@ app.get("/hello", (req, res) => {
   });
 
 app.get("/urls", (req, res) => {
-  let id = req.cookies.user_id
+  let id = req.session.user_id
+  let us
     const templateVars = { 
       urls: urlDatabase ,
       user: users[id]
     };
+
+  
     res.render("urls_index", templateVars);
   });
 
 app.get("/urls/new", (req, res) => {
-  let id = req.cookies.user_id
+  let id = req.session.user_id
   const templateVars = {
     user: users[id]
   };
@@ -144,7 +158,7 @@ app.get("/urls/new", (req, res) => {
 //   });
 
   app.get("/register", (req, res) => {
-    let id = req.cookies.user_id
+    let id = req.session.user_id
   const templateVars = {
     user: users[id]
   };
@@ -154,26 +168,28 @@ app.get("/urls/new", (req, res) => {
 app.post("/login", (req, res) => {
     for(let user in users) {
       let userFound = users[user]
-        if(userFound.email == req.body.email){
-          // make the incoming password compare to the hashed password and come back to the incoming password
-          const passwordFromDatabase = userFound.password // hashed password
-          const passwordFromUser = req.body.password  // regular password
-          const isPasswordsValid = bcrypt.compareSync(passwordFromUser, passwordFromDatabase)
-          if(!isPasswordsValid ) {
-            res.status(403).send("Invalid Password")
-          } 
-          res.cookie("user_id",userFound.id)
-          res.redirect("/urls") 
-          return 
-          
-        }
+      const passwordFromDatabase = userFound.password // hashed password
+      const passwordFromUser = req.body.password  // regular password
+      const isPasswordsValid = bcrypt.compareSync(passwordFromUser, passwordFromDatabase)
+      console.log(userFound.email,req.body.email)
+      
+      if(userFound.email == req.body.email){
+        console.log("email found")
+        if(!isPasswordsValid) {
+          res.status(403).send("Invalid Password")
+          return;
+        } else {
+          req.session.user_id = userFound.id;
+          res.redirect("/urls");
+          return;
+        } 
+      }   
     }
     res.status(403).send("Invalid Email")
   });  
 
    app.post("/logout", (req, res) => {
-    res.clearCookie('user_id')
-    //   res.send("ok")
+    req.session.user_id = null
     res.redirect("/urls")
      });  
 app.post("/register", (req, res) => {
@@ -200,20 +216,27 @@ app.post("/register", (req, res) => {
         "id":id
       }
       users[id]= userinfo
-      res.cookie('user_id', id)
+      req.session.user_id = id;
       res.redirect("/urls")
 });  
 
   app.get("/urls/:shortURL", (req, res) => {
     let parameterValue = req.params.shortURL
     let longURL;
-    for(let url in urlDatabase){
-        if(parameterValue) {
-            longURL = urlDatabase[parameterValue].longURL
+   console.log(urlDatabase)
+    if(req.session.user_id){
+        if(urlDatabase[parameterValue]) {
+          longURL = urlDatabase[parameterValue].longURL
         } else {
-            longURL = "doesn't exist"
-        }
-    }
+        res.status(403).send("URL does not exist")
+        return;
+      }
+  
+    } else {
+    res.status(401).send("please login")
+  }
+  
+
     const templateVars = { shortURL: req.params.shortURL, longURL: longURL};
     res.render("urls_show", templateVars);
   });
