@@ -1,48 +1,31 @@
-const bcrypt = require('bcryptjs');
+const findUserByEmail = function (users, email) {
+  for (let name in users) {
+    if (users[name].email === email) {
+      return users[name];
+    }
+  } return undefined
+}
 
-const generateRandomString = function () {
-  return Math.random().toString(36).slice(2, 8);
-};
 
-const getEmail = function (obj, str) {
-  for (const id in obj) {
-    if (obj[id].email === str) {
-      return true;
+
+const fetchUsersURL = function (urlDatabase, userID){
+  let usersURL = {}
+  for (let shortURL in urlDatabase){
+    if (urlDatabase[shortURL].userID == userID) {
+      usersURL[shortURL] = urlDatabase[shortURL].longURL
     }
   }
-};
+  return usersURL
+}
 
-
-const emailPwdMatch = function (obj, email, pwd) {
-  for (const id in obj) {
-    if ((obj[id].email === email) && (bcrypt.compareSync(pwd, obj[id].password))) {
-      return true;
-    }
+function generateRandomString() {
+  let randomString = "";
+  for (let i = 0; i < 6; i++) {
+    const randomCharCode = Math.floor(Math.random() * 26 + 97);
+    const randomChar = String.fromCharCode(randomCharCode);
+    randomString += randomChar;
   }
-};
+  return randomString;
+}
 
-const getUserID = function (userObj, email) {
-  let user_id;
-  for (let user in userObj) {
-    let emails = userObj[user].email;
-    if (emails === email) {
-      user_id = userObj[user].id;
-    }
-  }
-  return user_id;
-};
-
-const urlsForUser = function (userID, databaseObj) {
-  let newUserObj = {};
-
-  for (const shortURL in databaseObj) {
-    let databaseUserID = databaseObj[shortURL].userID;
-
-    if (userID === databaseUserID) {
-      newUserObj[shortURL] = databaseObj[shortURL];
-    }
-  }
-  return newUserObj;
-};
-
-module.exports = { generateRandomString, getEmail, emailPwdMatch, getUserID, urlsForUser };
+module.exports = {findUserByEmail, fetchUsersURL, generateRandomString }
